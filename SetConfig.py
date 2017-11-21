@@ -39,7 +39,7 @@ for c in range(numOfSC):
         serviceChainsNew[c, i] = serviceChains[c][i]
 
 #  Here each service chain may have different arrival rates
-arrivalRates = [1, 2]
+arrivalRates = [2, 5]
 # arrivalRates = np.zeros(numOfSC)
 # for c in range(numOfSC):
 #     arrivalRates[c] = 2
@@ -65,16 +65,17 @@ for c in range(numOfServer):
 '''
 System Information
 '''
-maxTime = 200000
+maxTime = 100000
 # Vs = [1]
 Vs = [i for i in range(101)]
 gamma = 1
+pCost = 1
 
 #  arrivals[c, t] is the number of arrival requests of SC type c at time-slot t
 arrivals = np.zeros((numOfSC, maxTime))
 procs = {
     'exp': (lambda lam: random.expovariate(lam)),
-    'pareto': (lambda alpha: random.paretovariate(0.999*alpha+1)-1),
+    # 'pareto': (lambda alpha: random.paretovariate(0.999*alpha+1)-1),
     'uni': (lambda r: random.uniform(0, 2.0/r)),
     'normal': (lambda r: max(0, random.normalvariate(1.0/r, 0.005))),
     'constant': (lambda r: 1.0/r),
@@ -104,10 +105,11 @@ def generate(maxTime, arrRate, arrProc):
 
     return totalArrivals
 
+
 for c in range(numOfSC):
-        arrivals[c, :] = generate(maxTime, arrivalRates[c], procs['exp'])
+    arrivals[c, :] = generate(maxTime, arrivalRates[c], procs['exp'])
 
 np.savez("config/NF Information.npz", numOfNF=numOfNF, processingCost=processingCost)
 np.savez("config/SC Information.npz", numOfSC=numOfSC, lengthOfSC=lengthOfSC, serviceChains=serviceChainsNew, arrivalRates=arrivalRates)
 np.savez("config/SN Information.npz", numOfServer=numOfServer, serverCapacities=serverCapacities, idleEnergies=idleEnergies, maxEnergies=maxEnergies)
-np.savez("config/System Information", maxTime=maxTime, arrivals=arrivals, Vs=Vs, gamma=gamma)
+np.savez("config/System Information", pCost=pCost, maxTime=maxTime, arrivals=arrivals, Vs=Vs, gamma=gamma)
