@@ -7,7 +7,7 @@ Vs = systemInformation['Vs']
 gamma = systemInformation['gamma']
 lenOfVs = len(Vs)
 
-i = 1
+i = 2
 print("V: ", Vs[i])
 index = 0  # 0: queue backlogs; 1: energy costs; 2: partition costs; 3: energy costs + gamma * partition costs.
 
