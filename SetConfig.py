@@ -4,7 +4,7 @@ import numpy as np
 '''
 Network Function (NF)
 '''
-numOfNF = 3  # number of NF types
+numOfNF = 6  # number of NF types
 
 processingCost = [5, 2, 1]
 # processingCost = np.zeros(numOfNF)
@@ -39,7 +39,7 @@ for c in range(numOfSC):
         serviceChainsNew[c, i] = serviceChains[c][i]
 
 #  Here each service chain may have different arrival rates
-arrivalRates = [2, 5]
+arrivalRates = [10, 25]
 # arrivalRates = np.zeros(numOfSC)
 # for c in range(numOfSC):
 #     arrivalRates[c] = 2
@@ -48,7 +48,7 @@ arrivalRates = [2, 5]
 '''
 Substrate Network (SN)
 '''
-numOfServer = 2  # number of servers
+numOfServer = 10  # number of servers
 
 serverCapacities = np.zeros(numOfServer)
 for c in range(numOfServer):
@@ -65,9 +65,9 @@ for c in range(numOfServer):
 '''
 System Information
 '''
-maxTime = 100000
+maxTime = 5000
 # Vs = [1]
-Vs = [i for i in range(101)]
+Vs = [i*10 for i in range(51)]
 gamma = 1
 pCost = 1
 
