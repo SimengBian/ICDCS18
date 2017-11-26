@@ -63,8 +63,8 @@ for c in range(numOfServer):
 System Information
 '''
 maxTime = 20
-Vs = [1]
-# Vs = [i*10 for i in range(51)]
+# Vs = [1]
+Vs = [i*10 for i in range(101)]
 gamma = 1
 pCost = 1
 
@@ -119,6 +119,6 @@ def generate(maxTime, arrRate, arrProc):
 arrivals = generate(maxTime, arrivalRate, procs['exp'])
 
 np.savez("config/NF Information.npz", numOfNF=numOfNF, processingCost=processingCost)
-np.savez("config/SC Information.npz", numOfSC=numOfSC, lengthOfSC=lengthOfSC, serviceChains=serviceChainsNew, arrivalRates=arrivalRates)
+np.savez("config/SC Information.npz", numOfSC=numOfSC, lengthOfSC=lengthOfSC, serviceChains=serviceChainsNew)
 np.savez("config/SN Information.npz", numOfServer=numOfServer, serverCapacities=serverCapacities, idleEnergies=idleEnergies, maxEnergies=maxEnergies)
 np.savez("config/System Information", pCost=pCost, maxTime=maxTime, arrivals=arrivals, Vs=Vs, gamma=gamma)
