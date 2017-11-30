@@ -8,7 +8,7 @@ Network Function (NF)
 '''
 numOfNF = 30  # number of NF types
 
-processingCost = np.array(15 * [1] + 10 * [2] + 5 * [5])
+processingCost = np.array(15 * [1] + 10 * [2] + 5 * [3])
 # processingCost = np.zeros(numOfNF)
 # for f in range(numOfNF):
 #     processingCost[f] = 1
@@ -17,6 +17,7 @@ processingCost = np.array(15 * [1] + 10 * [2] + 5 * [5])
 Service Chain (SC)
 '''
 numOfSC = 10  # number of Service Chain types
+pOfSC = np.array(5 * [0.19] + 5 * [0.01])
 lengthOfSC = 3
 
 #  Here the service chains are generated randomly
@@ -45,7 +46,7 @@ arrivalRate = 5.88
 '''
 Substrate Network (SN)
 '''
-numOfServer = 10  # number of servers
+numOfServer = 5  # number of servers
 
 serverCapacities = np.zeros(numOfServer)
 for c in range(numOfServer):
@@ -53,18 +54,18 @@ for c in range(numOfServer):
 
 idleEnergies = np.zeros(numOfServer)
 for c in range(numOfServer):
-    idleEnergies[c] = 80.5
+    idleEnergies[c] = 0.805
 
 maxEnergies = np.zeros(numOfServer)
 for c in range(numOfServer):
-    maxEnergies[c] = 2735
+    maxEnergies[c] = 27.35
 
 '''
 System Information
 '''
-maxTime = 20
-# Vs = [1]
-Vs = [i*10 for i in range(101)]
+maxTime = 200000
+# Vs = [50]
+Vs = [i*2 for i in range(1, 51)]
 gamma = 1
 pCost = 1
 
@@ -96,7 +97,8 @@ def generate(maxTime, arrRate, arrProc):
     while currentTime < maxTime:
         interval = arrProc(arrRate)
         currentTime += interval
-        SCtype = random.choice(range(numOfSC))
+        # SCtype = random.choice(range(numOfSC))
+        SCtype = np.random.choice(range(numOfSC), p=pOfSC)
         arrivalTimePoints.append((SCtype, currentTime))
 
     t = 1
@@ -121,4 +123,4 @@ arrivals = generate(maxTime, arrivalRate, procs['exp'])
 np.savez("config/NF Information.npz", numOfNF=numOfNF, processingCost=processingCost)
 np.savez("config/SC Information.npz", numOfSC=numOfSC, lengthOfSC=lengthOfSC, serviceChains=serviceChainsNew)
 np.savez("config/SN Information.npz", numOfServer=numOfServer, serverCapacities=serverCapacities, idleEnergies=idleEnergies, maxEnergies=maxEnergies)
-np.savez("config/System Information", pCost=pCost, maxTime=maxTime, arrivals=arrivals, Vs=Vs, gamma=gamma)
+np.savez("config/System Information.npz", pCost=pCost, maxTime=maxTime, arrivals=arrivals, Vs=Vs, gamma=gamma)
