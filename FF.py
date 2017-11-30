@@ -58,26 +58,32 @@ cumulativePartitionCosts = np.zeros(maxTime)
 timeAverageOfPartitionCosts = np.zeros(maxTime)
 
 
-def FFD():
+def FirstFit():
     placement = {}
     resources = np.zeros((numOfSC, numOfNF, numOfServer))
     restCapacities = serverCapacities.copy()
+    #  Decide placement
     for c in range(numOfSC):
         for i in range(lengthOfSC):
             f = serviceChains[c, i]
-            serverWithLargestRestCapacity = np.argmax(restCapacities)
-            if restCapacities[serverWithLargestRestCapacity] >= processingCost[f]:
-                placement[(c, f)] = serverWithLargestRestCapacity
-                restCapacities[serverWithLargestRestCapacity] -= processingCost[f]
-            else:
-                raise Exception("No legal placement decision in First Fit Decreasing Scheme")
+            flag = False
+            for s in range(numOfServer):
+                if restCapacities[s] >= processingCost[f]:
+                    placement[(c, f)] = s
+                    restCapacities[s] -= processingCost[f]
+                    flag = True
+                    break
 
+            if flag is False:
+                raise Exception("No legal placement decision in First Fit Scheme")
+    #  Decide resource allocation
     for s in range(numOfServer):
         for c in range(numOfSC):
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
                 if placement[(c, f)] == s:
-                    resources[c, f, s] = processingCost[f] * serverCapacities[s] / float(serverCapacities[s] - restCapacities[s])
+                    resources[c, f, s] = serverCapacities[s] * processingCost[f] / \
+                                         float(serverCapacities[s] - restCapacities[s])
 
     return placement, resources
 
@@ -125,7 +131,8 @@ def QueueUpdate(t, queues, servicesPre, placement, resources):
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
                 services[c, f, s] = min(int(resources[c, f, s] / float(processingCost[f])), updatedQueues[c, f, s])
-                energies[s] += (maxEnergies[s] - idleEnergies[s]) / float(serverCapacities[s]) * services[c, f, s] * processingCost[f]
+                energies[s] += (maxEnergies[s] - idleEnergies[s]) / float(serverCapacities[s]) \
+                                    * services[c, f, s] * processingCost[f]
                 updatedQueues[c, f, s] -= services[c, f, s]
 
     return updatedQueues, partitions, services, energies
@@ -135,7 +142,7 @@ if __name__ == "__main__":
 
     start_time = time()
 
-    placements, resourceAllocations = FFD()
+    placements, resourceAllocations = FirstFit()
 
     for t in range(maxTime):
         print("Now time slot is %s" % t)
@@ -156,8 +163,8 @@ if __name__ == "__main__":
 
     end_time = time()
 
-    np.save("resultsFFD/timeAverageOfQueueBacklogs.npy", timeAverageOfQueueBacklogs)
-    np.save("resultsFFD/timeAverageOfEnergyCosts.npy", timeAverageOfEnergyCosts)
-    np.save("resultsFFD/timeAverageOfPartitionCosts.npy", timeAverageOfPartitionCosts)
-    np.save("resultsFFD/varOfQueueBacklogs.npy", varOfQueueBacklogs)
+    np.save("resultsFF/timeAverageOfQueueBacklogs.npy", timeAverageOfQueueBacklogs)
+    np.save("resultsFF/timeAverageOfEnergyCosts.npy", timeAverageOfEnergyCosts)
+    np.save("resultsFF/timeAverageOfPartitionCosts.npy", timeAverageOfPartitionCosts)
+    np.save("resultsFF/varOfQueueBacklogs.npy", varOfQueueBacklogs)
     print("Simulation of First Fit Decreasing ends. Duration is %s sec." % (end_time - start_time,))

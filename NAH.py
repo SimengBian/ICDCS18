@@ -210,8 +210,9 @@ if __name__ == "__main__":
 
     end_time = time()
 
-    np.save("resultsFirstFit/timeAverageOfQueueBacklogs.npy", timeAverageOfQueueBacklogs)
-    np.save("resultsFirstFit/timeAverageOfEnergyCosts", timeAverageOfEnergyCosts)
-    np.save("resultsFirstFit/timeAverageOfPartitionCosts", timeAverageOfPartitionCosts)
-    np.savez("resultsFirstFit/varOfQueueBacklogs", varOfQueueBacklogs)
-    print("Simulation of First Fit Decreasing ends. Duration is %s sec." % (end_time - start_time,))
+    np.save("resultsNAH/timeAverageOfQueueBacklogs.npy", timeAverageOfQueueBacklogs)
+    np.save("resultsNAH/timeAverageOfEnergyCosts.npy", timeAverageOfEnergyCosts)
+    np.save("resultsNAH/timeAverageOfPartitionCosts.npy", timeAverageOfPartitionCosts)
+    np.save("resultsNAH/varOfQueueBacklogs.npy", varOfQueueBacklogs)
+
+    print("Simulation of NAH Decreasing ends. Duration is %s sec." % (end_time - start_time,))
