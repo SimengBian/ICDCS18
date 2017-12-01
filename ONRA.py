@@ -15,11 +15,11 @@ gamma = systemInformation['gamma']
 Vs = systemInformation['Vs']
 lenOfVs = len(Vs)
 arrivals = systemInformation['arrivals']  # arrivals[c, t]
-pCost = systemInformation['pCost']
+unitCommCost = systemInformation['unitCommCost']
 
 # Network Function Information
 numOfNF = int(nfInformation['numOfNF'])
-processingCost = nfInformation['processingCost']  # processingCost[f]
+processingCosts = nfInformation['processingCosts']  # processingCosts[f]
 
 # Service Chain Information
 numOfSC = int(scInformation['numOfSC'])
@@ -131,7 +131,7 @@ def ResourceAllocation(t, V, queues, placement, mValue):
         for c in range(numOfSC):
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
-                weights[c, f] -= queues[c, f, s] / float(processingCost[f])
+                weights[c, f] -= queues[c, f, s] / float(processingCosts[f])
 
         restCapacity = serverCapacities[s]
         while True:
@@ -139,11 +139,11 @@ def ResourceAllocation(t, V, queues, placement, mValue):
             if weights[chosenType, chosenVM] >= 0:
                 break
 
-            neededResource = queues[chosenType, chosenVM, s] * processingCost[chosenVM]
+            neededResource = queues[chosenType, chosenVM, s] * processingCosts[chosenVM]
             if (chosenType, chosenVM) in placement.keys() and placement[(chosenType, chosenVM)] == s:
-                neededResource += mValue[chosenType, chosenVM] * processingCost[chosenVM]
+                neededResource += mValue[chosenType, chosenVM] * processingCosts[chosenVM]
 
-            if restCapacity >= processingCost[chosenVM]:
+            if restCapacity >= processingCosts[chosenVM]:
                 allocation[chosenType, chosenVM, s] = min(restCapacity, neededResource)
                 restCapacity -= allocation[chosenType, chosenVM, s]
             weights[chosenType, chosenVM] = float('inf')
@@ -191,14 +191,14 @@ def QueueUpdate(t, V, queues, servicesPre, placement, resources):
                 for s in range(numOfServer):
                     updatedQueues[c, f, chosenServer] += servicesPre[c, fPre, s]
                     if s != chosenServer:
-                        partitions[c] += servicesPre[c, fPre, s] * pCost
+                        partitions[c] += servicesPre[c, fPre, s] * unitCommCost
 
     # Service process
     for s in range(numOfServer):
         for c in range(numOfSC):
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
-                services[c, f, s] = resources[c, f, s] / float(processingCost[f])
+                services[c, f, s] = resources[c, f, s] / float(processingCosts[f])
                 energies[s] += (maxEnergies[s] - idleEnergies[s]) / float(serverCapacities[s]) * resources[c, f, s]
                 updatedQueues[c, f, s] -= services[c, f, s]
 
