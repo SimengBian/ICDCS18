@@ -6,11 +6,10 @@ xs = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 250, 400, 450, 650, 1000,
 '''
 Network Function (NF)
 '''
-numOfNF = 3  #30  # number of NF types
+numOfNF = 30  # number of NF types
 
-
-processingCosts = np.array([5, 2, 1])
-# processingCosts = np.array(15 * [1] + 10 * [2] + 5 * [3])
+# processingCosts = np.array([5, 2, 1])
+processingCosts = np.array(15 * [1] + 10 * [2] + 5 * [3])
 # processingCosts = np.zeros(numOfNF)
 # for f in range(numOfNF):
 #     processingCosts[f] = 1
@@ -18,10 +17,10 @@ processingCosts = np.array([5, 2, 1])
 '''
 Service Chain (SC)
 '''
-numOfSC = 5  #10  # number of Service Chain types
-pOfSC = np.array(3 * [0.3] + 2 * [0.05])
-# pOfSC = np.array(2*[0.4] + [0.2])
-windowSizes = 5 * np.ones(numOfSC, dtype=int)
+numOfSC = 10  # number of Service Chain types
+pOfSC = np.array(4 * [0.025] + 6 * [0.15])
+# pOfSC = np.array([0.9, 0.1])
+windowSizes = 1 * np.ones(numOfSC, dtype=int)
 lengthOfSC = 3
 
 #  Here the service chains are generated randomly
@@ -51,11 +50,11 @@ arrivalRate = 5.88
 '''
 Substrate Network (SN)
 '''
-numOfServer = 3  #5  # number of servers
+numOfServer = 5  # number of servers
 
 serverCapacities = np.zeros(numOfServer)
 for c in range(numOfServer):
-    serverCapacities[c] = 64
+    serverCapacities[c] = 16
 
 idleEnergies = np.zeros(numOfServer)
 for c in range(numOfServer):
@@ -68,10 +67,9 @@ for c in range(numOfServer):
 '''
 System Information
 '''
-maxTime = 1000
-# # Vs = [50]
-# Vs = [i*2 for i in range(1, 51)]
-Vs = [i*5 for i in range(1, 2)]
+maxTime = 100000
+Vs = [100]
+# Vs = [i*4 for i in range(1, 26)]
 alpha = 1
 gamma = 1
 unitCommCost = 1

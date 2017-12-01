@@ -144,7 +144,8 @@ def ResourceAllocation(t, V, queues, placement, mValue):
                 neededResource += mValue[chosenType, chosenVM] * processingCosts[chosenVM]
 
             if restCapacity >= processingCosts[chosenVM]:
-                allocation[chosenType, chosenVM, s] = min(restCapacity, neededResource)
+                numService = np.floor(restCapacity/processingCosts[chosenVM])
+                allocation[chosenType, chosenVM, s] = min(numService * processingCosts[chosenVM], neededResource)
                 restCapacity -= allocation[chosenType, chosenVM, s]
             weights[chosenType, chosenVM] = float('inf')
 
@@ -198,7 +199,7 @@ def QueueUpdate(t, V, queues, servicesPre, placement, resources):
         for c in range(numOfSC):
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
-                services[c, f, s] = resources[c, f, s] / float(processingCosts[f])
+                services[c, f, s] = np.floor(resources[c, f, s] / float(processingCosts[f]))
                 energies[s] += (maxEnergies[s] - idleEnergies[s]) / float(serverCapacities[s]) * resources[c, f, s]
                 updatedQueues[c, f, s] -= services[c, f, s]
 

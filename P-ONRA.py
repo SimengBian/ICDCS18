@@ -26,7 +26,8 @@ processingCosts = nfInformation['processingCosts']  # processingCosts[f]
 numOfSC = int(scInformation['numOfSC'])
 lengthOfSC = int(scInformation['lengthOfSC'])
 serviceChains = scInformation['serviceChains']  # serviceChains[c, i]
-windowSizes = scInformation['windowSizes']
+# windowSizes = scInformation['windowSizes']
+windowSizes = 100 * np.ones(numOfSC, dtype=int)
 maxWindowSize = np.max(windowSizes)
 
 # Substrate Network Information (mainly about the servers)
@@ -147,7 +148,8 @@ def ResourceAllocation(t, V, queues, placement, mValue):
                 neededResource += mValue[chosenType, chosenVM] * processingCosts[chosenVM]
 
             if restCapacity >= processingCosts[chosenVM]:
-                allocation[chosenType, chosenVM, s] = min(restCapacity, neededResource)
+                numService = np.floor(restCapacity/processingCosts[chosenVM])
+                allocation[chosenType, chosenVM, s] = min(numService * processingCosts[chosenVM], neededResource)
                 restCapacity -= allocation[chosenType, chosenVM, s]
             weights[chosenType, chosenVM] = float('inf')
 
@@ -198,6 +200,7 @@ def QueueUpdate(t, V, queues, servicesPre, predictionServices, placement, resour
 
 def PredictionQueueUpdate(t, V, predictionQueues, predictionServices):
     updatedPredictionQueues = np.zeros((numOfSC, maxWindowSize + 1))
+    updatedPredictionQueues[:, 0:maxWindowSize] = predictionQueues[:, 1:maxWindowSize + 1]
     for c in range(numOfSC):
         if t + windowSizes[c] + 1 < maxTime:
             updatedPredictionQueues[c, windowSizes[c]] = arrivals[c, t + windowSizes[c] + 1]
@@ -250,7 +253,9 @@ if __name__ == "__main__":
             print("Now V is %s and time slot is %s" % (V, t))
             VNFGreedy(t, V)
 
-            cumulativeQueueBacklogs[V][t] += cumulativeQueueBacklogs[V][t - 1] + np.sum(queueBacklogs[V])
+            cumulativeQueueBacklogs[V][t] += cumulativeQueueBacklogs[V][t - 1] \
+                                             + np.sum(queueBacklogs[V]) \
+                                             # + np.sum(predictionQueueBacklogs[V][:, 0:maxWindowSize])
 
             # print('queue:', cumulativeQueueBacklogs[V][t])
 

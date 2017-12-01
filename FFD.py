@@ -12,11 +12,11 @@ systemInformation = np.load("config/System Information.npz")
 # System Information
 maxTime = systemInformation['maxTime']
 arrivals = systemInformation['arrivals']  # arrivals[c, t]
-pCost = systemInformation['pCost']
+unitCommCost = systemInformation['unitCommCost']
 
 # Network Function Information
 numOfNF = int(nfInformation['numOfNF'])
-processingCost = nfInformation['processingCost']  # processingCost[f]
+processingCosts = nfInformation['processingCosts']  # processingCost[f]
 
 # Service Chain Information
 numOfSC = int(scInformation['numOfSC'])
@@ -41,8 +41,8 @@ actualServices = np.zeros((numOfSC, numOfNF, numOfServer), dtype=int)
 # energyCosts[s] denotes the energy consumption on server s.
 energyCosts = np.zeros(numOfServer, dtype=int)
 
-# partitionCosts[c] denotes the partition cost of chain c.
-partitionCosts = np.zeros(numOfSC, dtype=int)
+# communicationCosts[c] denotes the communication cost of chain c.
+communicationCosts = np.zeros(numOfSC, dtype=int)
 
 '''
 records of states over time
@@ -54,8 +54,8 @@ timeAverageOfQueueBacklogs = np.zeros(maxTime)
 cumulativeEnergyCosts = np.zeros(maxTime)
 timeAverageOfEnergyCosts = np.zeros(maxTime)
 
-cumulativePartitionCosts = np.zeros(maxTime)
-timeAverageOfPartitionCosts = np.zeros(maxTime)
+cumulativeCommunicationCosts = np.zeros(maxTime)
+timeAverageOfCommunicationCosts = np.zeros(maxTime)
 
 
 def FFD():
@@ -66,9 +66,9 @@ def FFD():
         for i in range(lengthOfSC):
             f = serviceChains[c, i]
             serverWithLargestRestCapacity = np.argmax(restCapacities)
-            if restCapacities[serverWithLargestRestCapacity] >= processingCost[f]:
+            if restCapacities[serverWithLargestRestCapacity] >= processingCosts[f]:
                 placement[(c, f)] = serverWithLargestRestCapacity
-                restCapacities[serverWithLargestRestCapacity] -= processingCost[f]
+                restCapacities[serverWithLargestRestCapacity] -= processingCosts[f]
             else:
                 raise Exception("No legal placement decision in First Fit Decreasing Scheme")
 
@@ -77,7 +77,7 @@ def FFD():
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
                 if placement[(c, f)] == s:
-                    resources[c, f, s] = processingCost[f] * serverCapacities[s] / float(serverCapacities[s] - restCapacities[s])
+                    resources[c, f, s] = processingCosts[f] * serverCapacities[s] / float(serverCapacities[s] - restCapacities[s])
 
     return placement, resources
 
@@ -90,14 +90,14 @@ def QueueUpdate(t, queues, servicesPre, placement, resources):
     :param placement: actual VNF placement
     :param resources: resources allocated at current time slot
     :return queues: updated queues
-    :return partitions:
+    :return communications:
     :return services:
     :return energies:
     '''
     #  updatedQueues[c, f, s] is queue length after updating
     updatedQueues = queues.copy()
-    #  partitions[c] is the partition cost of SC c
-    partitions = np.zeros(numOfSC)
+    #  communications[c] is the communication cost of SC c
+    communications = np.zeros(numOfSC)
     #  services[c, f, s] denotes the number of finished requests of queue (c,f,s) of current time-slot
     services = np.zeros((numOfSC, numOfNF, numOfServer))
     #  energies[s] denotes the energy consumption of server s
@@ -117,18 +117,18 @@ def QueueUpdate(t, queues, servicesPre, placement, resources):
                 for s in range(numOfServer):
                     updatedQueues[c, f, chosenServer] += servicesPre[c, fPre, s]
                     if s != chosenServer:
-                        partitions[c] += servicesPre[c, fPre, s] * pCost
+                        communications[c] += servicesPre[c, fPre, s] * unitCommCost
 
     # Service process
     for s in range(numOfServer):
         for c in range(numOfSC):
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
-                services[c, f, s] = min(int(resources[c, f, s] / float(processingCost[f])), updatedQueues[c, f, s])
-                energies[s] += (maxEnergies[s] - idleEnergies[s]) / float(serverCapacities[s]) * services[c, f, s] * processingCost[f]
+                services[c, f, s] = min(np.floor(resources[c, f, s] / float(processingCosts[f])), updatedQueues[c, f, s])
+                energies[s] += (maxEnergies[s] - idleEnergies[s]) / float(serverCapacities[s]) * services[c, f, s] * processingCosts[f]
                 updatedQueues[c, f, s] -= services[c, f, s]
 
-    return updatedQueues, partitions, services, energies
+    return updatedQueues, communications, services, energies
 
 
 if __name__ == "__main__":
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     for t in range(maxTime):
         print("Now time slot is %s" % t)
 
-        queueBacklogs, partitionCosts, actualServices, energyCosts = \
+        queueBacklogs, communicationCosts, actualServices, energyCosts = \
             QueueUpdate(t, queueBacklogs, actualServices, placements, resourceAllocations)
 
         cumulativeQueueBacklogs[t] += cumulativeQueueBacklogs[t - 1] + np.sum(queueBacklogs)
@@ -149,8 +149,8 @@ if __name__ == "__main__":
         cumulativeEnergyCosts[t] += cumulativeEnergyCosts[t - 1] + np.sum(energyCosts)
         timeAverageOfEnergyCosts[t] = cumulativeEnergyCosts[t] / float(t + 1)
 
-        cumulativePartitionCosts[t] += cumulativePartitionCosts[t - 1] + np.sum(partitionCosts)
-        timeAverageOfPartitionCosts[t] = cumulativePartitionCosts[t] / float(t + 1)
+        cumulativeCommunicationCosts[t] += cumulativeCommunicationCosts[t - 1] + np.sum(communicationCosts)
+        timeAverageOfCommunicationCosts[t] = cumulativeCommunicationCosts[t] / float(t + 1)
 
         varOfQueueBacklogs[t] = np.var(queueBacklogs)
 
@@ -158,6 +158,6 @@ if __name__ == "__main__":
 
     np.save("resultsFFD/timeAverageOfQueueBacklogs.npy", timeAverageOfQueueBacklogs)
     np.save("resultsFFD/timeAverageOfEnergyCosts.npy", timeAverageOfEnergyCosts)
-    np.save("resultsFFD/timeAverageOfPartitionCosts.npy", timeAverageOfPartitionCosts)
+    np.save("resultsFFD/timeAverageOfCommunicationCosts.npy", timeAverageOfCommunicationCosts)
     np.save("resultsFFD/varOfQueueBacklogs.npy", varOfQueueBacklogs)
-    print("Simulation of First Fit Decreasing ends. Duration is %s sec." % (end_time - start_time,))
+    print("Simulation of First Fit ends. Duration is %s sec." % (end_time - start_time,))

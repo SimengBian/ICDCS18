@@ -12,11 +12,11 @@ systemInformation = np.load("config/System Information.npz")
 # System Information
 maxTime = systemInformation['maxTime']
 arrivals = systemInformation['arrivals']  # arrivals[c, t]
-pCost = systemInformation['pCost']
+unitCommCost = systemInformation['unitCommCost']
 
 # Network Function Information
 numOfNF = int(nfInformation['numOfNF'])
-processingCost = nfInformation['processingCost']  # processingCost[f]
+processingCosts = nfInformation['processingCosts']  # processingCosts[f]
 
 # Service Chain Information
 numOfSC = int(scInformation['numOfSC'])
@@ -41,8 +41,8 @@ actualServices = np.zeros((numOfSC, numOfNF, numOfServer), dtype=int)
 # energyCosts[s] denotes the energy consumption on server s.
 energyCosts = np.zeros(numOfServer, dtype=int)
 
-# partitionCosts[c] denotes the partition cost of chain c.
-partitionCosts = np.zeros(numOfSC, dtype=int)
+# communicationCosts[c] denotes the communication cost of chain c.
+communicationCosts = np.zeros(numOfSC, dtype=int)
 
 '''
 records of states over time
@@ -54,8 +54,8 @@ timeAverageOfQueueBacklogs = np.zeros(maxTime)
 cumulativeEnergyCosts = np.zeros(maxTime)
 timeAverageOfEnergyCosts = np.zeros(maxTime)
 
-cumulativePartitionCosts = np.zeros(maxTime)
-timeAverageOfPartitionCosts = np.zeros(maxTime)
+cumulativeCommunicationCosts = np.zeros(maxTime)
+timeAverageOfCommunicationCosts = np.zeros(maxTime)
 
 
 def NAH():
@@ -68,7 +68,7 @@ def NAH():
         #  Servers used by SC type c
         serverList = []
         #  Sort NFs of SC type c with respect to processing cost in descending order
-        unprocessedNFs = sorted(serviceChains[c, :], key=lambda x: processingCost[x], reverse=True)
+        unprocessedNFs = sorted(serviceChains[c, :], key=lambda x: processingCosts[x], reverse=True)
         #  consumedResources[s] = float('inf') means server s is not used by SC type c
         consumedResources = np.ones(numOfServer) * float('inf')
 
@@ -77,25 +77,25 @@ def NAH():
             #  Sort used servers with respect to rest capacity in ascending order
             serverList = sorted(serverList, key=lambda x: restCapacities[x])
             for s in serverList:
-                if restCapacities[s] >= processingCost[f]:
+                if restCapacities[s] >= processingCosts[f]:
                     placement[(c, f)] = s
-                    restCapacities[s] -= processingCost[f]
+                    restCapacities[s] -= processingCosts[f]
                     if consumedResources[s] == float('inf'):
-                        consumedResources[s] = processingCost[f]
+                        consumedResources[s] = processingCosts[f]
                     else:
-                        consumedResources[s] += processingCost[f]
+                        consumedResources[s] += processingCosts[f]
                     flag = True
                     break
             if not flag:
                 selectedServer = np.argmax(restCapacities)
                 serverList.append(selectedServer)
-                if restCapacities[selectedServer] >= processingCost[f]:
+                if restCapacities[selectedServer] >= processingCosts[f]:
                     placement[(c, f)] = selectedServer
-                    restCapacities[selectedServer] -= processingCost[f]
+                    restCapacities[selectedServer] -= processingCosts[f]
                     if consumedResources[selectedServer] == float('inf'):
-                        consumedResources[selectedServer] = processingCost[f]
+                        consumedResources[selectedServer] = processingCosts[f]
                     else:
-                        consumedResources[selectedServer] += processingCost[f]
+                        consumedResources[selectedServer] += processingCosts[f]
                 else:
                     raise Exception("No legal placement decision in Node Assignment Heuristic Scheme")
 
@@ -130,7 +130,7 @@ def NAH():
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
                 if placement[(c, f)] == s:
-                    resources[c, f, s] = serverCapacities[s] * processingCost[f] / float(consumedResources[s])
+                    resources[c, f, s] = serverCapacities[s] * processingCosts[f] / float(consumedResources[s])
 
     return placement, resources
 
@@ -143,14 +143,14 @@ def QueueUpdate(t, queues, servicesPre, placement, resources):
     :param placement: actual VNF placement
     :param resources: resources allocated at current time slot
     :return queues: updated queues
-    :return partitions:
+    :return communications:
     :return services:
     :return energies:
     '''
     #  updatedQueues[c, f, s] is queue length after updating
     updatedQueues = queues.copy()
-    #  partitions[c] is the partition cost of SC c
-    partitions = np.zeros(numOfSC)
+    #  communications[c] is the communication cost of SC c
+    communications = np.zeros(numOfSC)
     #  services[c, f, s] denotes the number of finished requests of queue (c,f,s) of current time-slot
     services = np.zeros((numOfSC, numOfNF, numOfServer))
     #  energies[s] denotes the energy consumption of server s
@@ -170,19 +170,19 @@ def QueueUpdate(t, queues, servicesPre, placement, resources):
                 for s in range(numOfServer):
                     updatedQueues[c, f, chosenServer] += servicesPre[c, fPre, s]
                     if s != chosenServer:
-                        partitions[c] += servicesPre[c, fPre, s] * pCost
+                        communications[c] += servicesPre[c, fPre, s] * unitCommCost
 
     # Service process
     for s in range(numOfServer):
         for c in range(numOfSC):
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
-                services[c, f, s] = min(int(resources[c, f, s] / float(processingCost[f])), updatedQueues[c, f, s])
+                services[c, f, s] = min(np.floor(resources[c, f, s] / float(processingCosts[f])), updatedQueues[c, f, s])
                 energies[s] += (maxEnergies[s] - idleEnergies[s]) / float(serverCapacities[s]) \
-                                    * services[c, f, s] * processingCost[f]
+                                    * services[c, f, s] * processingCosts[f]
                 updatedQueues[c, f, s] -= services[c, f, s]
 
-    return updatedQueues, partitions, services, energies
+    return updatedQueues, communications, services, energies
 
 
 if __name__ == "__main__":
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     for t in range(maxTime):
         print("Now time slot is %s" % t)
 
-        queueBacklogs, partitionCosts, actualServices, energyCosts = \
+        queueBacklogs, communicationCosts, actualServices, energyCosts = \
             QueueUpdate(t, queueBacklogs, actualServices, placements, resourceAllocations)
 
         cumulativeQueueBacklogs[t] += cumulativeQueueBacklogs[t - 1] + np.sum(queueBacklogs)
@@ -203,8 +203,8 @@ if __name__ == "__main__":
         cumulativeEnergyCosts[t] += cumulativeEnergyCosts[t - 1] + np.sum(energyCosts)
         timeAverageOfEnergyCosts[t] = cumulativeEnergyCosts[t] / float(t + 1)
 
-        cumulativePartitionCosts[t] += cumulativePartitionCosts[t - 1] + np.sum(partitionCosts)
-        timeAverageOfPartitionCosts[t] = cumulativePartitionCosts[t] / float(t + 1)
+        cumulativeCommunicationCosts[t] += cumulativeCommunicationCosts[t - 1] + np.sum(communicationCosts)
+        timeAverageOfCommunicationCosts[t] = cumulativeCommunicationCosts[t] / float(t + 1)
 
         varOfQueueBacklogs[t] = np.var(queueBacklogs)
 
@@ -212,7 +212,7 @@ if __name__ == "__main__":
 
     np.save("resultsNAH/timeAverageOfQueueBacklogs.npy", timeAverageOfQueueBacklogs)
     np.save("resultsNAH/timeAverageOfEnergyCosts.npy", timeAverageOfEnergyCosts)
-    np.save("resultsNAH/timeAverageOfPartitionCosts.npy", timeAverageOfPartitionCosts)
+    np.save("resultsNAH/timeAverageOfCommunicationCosts.npy", timeAverageOfCommunicationCosts)
     np.save("resultsNAH/varOfQueueBacklogs.npy", varOfQueueBacklogs)
 
-    print("Simulation of NAH Decreasing ends. Duration is %s sec." % (end_time - start_time,))
+    print("Simulation of NAH ends. Duration is %s sec." % (end_time - start_time,))

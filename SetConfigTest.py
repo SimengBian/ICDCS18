@@ -17,8 +17,8 @@ processingCosts = np.array([5, 2, 1])
 Service Chain (SC)
 '''
 numOfSC = 2  # number of Service Chain types
-pOfSC = np.array([0.9, 0.1])
-windowSizes = 2 * np.ones(numOfSC, dtype=int)
+pOfSC = np.array([0.1, 0.9])
+windowSizes = 10 * np.ones(numOfSC, dtype=int)
 lengthOfSC = 3
 
 #  Here the service chains are generated randomly
@@ -47,11 +47,11 @@ arrivalRate = 5.88
 '''
 Substrate Network (SN)
 '''
-numOfServer = 3  # number of servers
+numOfServer = 2  # number of servers
 
 serverCapacities = np.zeros(numOfServer)
 for c in range(numOfServer):
-    serverCapacities[c] = 20
+    serverCapacities[c] = 60
 
 idleEnergies = np.zeros(numOfServer)
 for c in range(numOfServer):
@@ -64,7 +64,7 @@ for c in range(numOfServer):
 '''
 System Information
 '''
-maxTime = 1000
+maxTime = 2000
 Vs = [1]
 # Vs = [i*2 for i in range(1, 51)]
 alpha = 1
