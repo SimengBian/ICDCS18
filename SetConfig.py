@@ -8,20 +8,22 @@ Network Function (NF)
 '''
 numOfNF = 30  # number of NF types
 
-processingCost = np.array(15 * [1] + 10 * [2] + 5 * [3])
-# processingCost = np.zeros(numOfNF)
+processingCosts = np.array(15 * [1] + 10 * [2] + 5 * [3])
+# processingCosts = np.zeros(numOfNF)
 # for f in range(numOfNF):
-#     processingCost[f] = 1
+#     processingCosts[f] = 1
 
 '''
 Service Chain (SC)
 '''
 numOfSC = 10  # number of Service Chain types
 pOfSC = np.array(5 * [0.19] + 5 * [0.01])
+windowSizes = 3 * np.ones(numOfSC, dtype=int)
 lengthOfSC = 3
 
 #  Here the service chains are generated randomly
-# serviceChains = {0: [2, 0, 1], 1: [0, 1, 2]}  # here we must use dictionary to verify if the generated chain is new
+#  serviceChains = {0: [2, 0, 1], 1: [0, 1, 2]}
+#  here we must use dictionary to verify if the generated chain is new
 serviceChains = {c: [] for c in range(numOfSC)}
 c = 0
 while True:
@@ -66,8 +68,9 @@ System Information
 maxTime = 200000
 # Vs = [50]
 Vs = [i*2 for i in range(1, 51)]
+alpha = 1
 gamma = 1
-pCost = 1
+unitCommCost = 1
 
 
 def interval_generator(r):
@@ -120,7 +123,7 @@ def generate(maxTime, arrRate, arrProc):
 #  arrivals[c, t] is the number of arrival requests of SC type c at time-slot t
 arrivals = generate(maxTime, arrivalRate, procs['exp'])
 
-np.savez("config/NF Information.npz", numOfNF=numOfNF, processingCost=processingCost)
-np.savez("config/SC Information.npz", numOfSC=numOfSC, lengthOfSC=lengthOfSC, serviceChains=serviceChainsNew)
+np.savez("config/NF Information.npz", numOfNF=numOfNF, processingCosts=processingCosts)
+np.savez("config/SC Information.npz", numOfSC=numOfSC, lengthOfSC=lengthOfSC, serviceChains=serviceChainsNew, windowSizes=windowSizes)
 np.savez("config/SN Information.npz", numOfServer=numOfServer, serverCapacities=serverCapacities, idleEnergies=idleEnergies, maxEnergies=maxEnergies)
-np.savez("config/System Information.npz", pCost=pCost, maxTime=maxTime, arrivals=arrivals, Vs=Vs, gamma=gamma)
+np.savez("config/System Information.npz", unitCommCost=unitCommCost, maxTime=maxTime, arrivals=arrivals, Vs=Vs, gamma=gamma, alpha=alpha)

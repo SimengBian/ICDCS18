@@ -10,31 +10,31 @@ lenOfVs = len(Vs)
 i = 9
 print("V: ", Vs[i])
 
-metric = 0  # 0: queue backlogs; 1: energy costs; 2: partition costs; 3: energy costs + gamma * partition costs.
+metric = 0  # 0: queue backlogs; 1: energy costs; 2: communication costs; 3: energy costs + gamma * communication costs.
 
 scheme = ["FF", "FFD", "NAH", "ONRA", ]
 
 queuesFF = np.load("resultsFF/timeAverageOfQueueBacklogs.npy")
 energiesFF = np.load("resultsFF/timeAverageOfEnergyCosts.npy")
-partitionsFF = np.load("resultsFF/timeAverageOfPartitionCosts.npy")
+communicationsFF = np.load("resultsFF/timeAverageOfCommunicationCosts.npy")
 
 queuesFFD = np.load("resultsFFD/timeAverageOfQueueBacklogs.npy")
 energiesFFD = np.load("resultsFFD/timeAverageOfEnergyCosts.npy")
-partitionsFFD = np.load("resultsFFD/timeAverageOfPartitionCosts.npy")
+communicationsFFD = np.load("resultsFFD/timeAverageOfCommunicationCosts.npy")
 
 queuesNAH = np.load("resultsNAH/timeAverageOfQueueBacklogs.npy")
 energiesNAH = np.load("resultsNAH/timeAverageOfEnergyCosts.npy")
-partitionsNAH = np.load("resultsNAH/timeAverageOfPartitionCosts.npy")
+communicationsNAH = np.load("resultsNAH/timeAverageOfCommunicationCosts.npy")
 
 queuesONRA = np.load("resultsONRA/timeAverageOfQueueBacklogs.npy")
 energiesONRA = np.load("resultsONRA/timeAverageOfEnergyCosts.npy")
-partitionsONRA = np.load("resultsONRA/timeAverageOfPartitionCosts.npy")
+communicationsONRA = np.load("resultsONRA/timeAverageOfCommunicationCosts.npy")
 
 x = list(range(maxTime))
 ys = [[queuesFF, queuesFFD, queuesNAH, queuesONRA[i]],
       [energiesFF, energiesFFD, energiesNAH, energiesONRA[i]],
-      [partitionsFF, partitionsFFD, partitionsNAH, partitionsONRA[i]],
-      [energiesFF+partitionsFF, energiesFFD+partitionsFFD, energiesNAH+partitionsNAH,energiesONRA[i]+partitionsONRA[i]]]
+      [communicationsFF, communicationsFFD, communicationsNAH, communicationsONRA[i]],
+      [energiesFF+communicationsFF, energiesFFD+communicationsFFD, energiesNAH+communicationsNAH,energiesONRA[i]+communicationsONRA[i]]]
 
 plt.figure(figsize=(10, 8))
 plt.plot(x, ys[metric][0], 'r-', label=scheme[0], linewidth=2)

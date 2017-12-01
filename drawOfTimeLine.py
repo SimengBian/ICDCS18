@@ -9,29 +9,29 @@ lenOfVs = len(Vs)
 
 i = 39
 print("V: ", Vs[i])
-metric = 0  # 0: queue backlogs; 1: energy costs; 2: partition costs; 3: energy costs + gamma * partition costs.
+metric = 0  # 0: queue backlogs; 1: energy costs; 2: communication costs; 3: energy costs + gamma * communication costs.
 scheme = 3  # 0: FF; 1: FFD; 2: NAH; 3: ONRA
 
 schemes = ["FF", "FFD", "NAH", "ONRA", ]
 
 queues = np.load("results%s/timeAverageOfQueueBacklogs.npy" % schemes[scheme])
 energies = np.load("results%s/timeAverageOfEnergyCosts.npy" % schemes[scheme])
-partitions = np.load("results%s/timeAverageOfPartitionCosts.npy" % schemes[scheme])
+communications = np.load("results%s/timeAverageOfCommunicationCosts.npy" % schemes[scheme])
 
 x = list(range(maxTime))
 
 
 if scheme == 3:
-    ys = [queues[i], energies[i], partitions[i], np.array(energies[i]) + gamma * np.array(partitions[i])]
+    ys = [queues[i], energies[i], communications[i], np.array(energies[i]) + gamma * np.array(communications[i])]
     plt.xlabel("Time-slot (V=" + str(Vs[i]) + ")")
 else:
-    ys = [queues, energies, partitions, np.array(energies) + gamma * np.array(partitions)]
+    ys = [queues, energies, communications, np.array(energies) + gamma * np.array(communications)]
     plt.xlabel("Time-slot")
 
 labels = ["Time-Average Queue Backlogs",
           "Time-Average Energy Cost",
-          "Time-Average Partition Cost",
-          "Time-Average Energy and Partition Cost"]
+          "Time-Average Communication Cost",
+          "Time-Average Energy and Communication Cost"]
 colors = ['r', 'g', 'b', 'y']
 
 plt.ylabel(labels[metric])

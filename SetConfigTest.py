@@ -8,16 +8,33 @@ Network Function (NF)
 '''
 numOfNF = 3  # number of NF types
 
-processingCost = np.array([5, 2, 1])
+processingCosts = np.array([5, 2, 1])
+# processingCosts = np.zeros(numOfNF)
+# for f in range(numOfNF):
+#     processingCosts[f] = 1
 
 '''
 Service Chain (SC)
 '''
 numOfSC = 2  # number of Service Chain types
+pOfSC = np.array([0.5, 0.5])
+windowSizes = 2 * np.ones(numOfSC, dtype=int)
 lengthOfSC = 3
 
 #  Here the service chains are generated randomly
 serviceChains = {0: [2, 0, 1], 1: [0, 1, 2]}  # here we must use dictionary to verify if the generated chain is new
+# serviceChains = {c: [] for c in range(numOfSC)}
+# c = 0
+# while True:
+#     if c >= numOfSC:
+#         break
+#
+#     NFs = list(range(numOfNF))  # the networks function {0,1,2,...,F-1}
+#     random.shuffle(NFs)
+#     chain = NFs[0:lengthOfSC]  # the chosen service chain
+#     if chain not in serviceChains.values():  # if it is new
+#         serviceChains[c] = chain  # added it to the dictionary
+#         c += 1
 
 #  serviceChainsNew[c, i] is the i-th NF of SC type c
 serviceChainsNew = (-1) * np.ones((numOfSC, lengthOfSC), dtype=int)
@@ -34,24 +51,25 @@ numOfServer = 2  # number of servers
 
 serverCapacities = np.zeros(numOfServer)
 for c in range(numOfServer):
-    serverCapacities[c] = 16
+    serverCapacities[c] = 20
 
 idleEnergies = np.zeros(numOfServer)
 for c in range(numOfServer):
-    idleEnergies[c] = 0.805
+    idleEnergies[c] = 10
 
 maxEnergies = np.zeros(numOfServer)
 for c in range(numOfServer):
-    maxEnergies[c] = 27.35
+    maxEnergies[c] = 50
 
 '''
 System Information
 '''
-maxTime = 10
+maxTime = 100
 Vs = [1]
-# Vs = [i*10 for i in range(101)]
+# Vs = [i*2 for i in range(1, 51)]
+alpha = 1
 gamma = 1
-pCost = 1
+unitCommCost = 1
 
 
 def interval_generator(r):
@@ -81,7 +99,8 @@ def generate(maxTime, arrRate, arrProc):
     while currentTime < maxTime:
         interval = arrProc(arrRate)
         currentTime += interval
-        SCtype = random.choice(range(numOfSC))
+        # SCtype = random.choice(range(numOfSC))
+        SCtype = np.random.choice(range(numOfSC), p=pOfSC)
         arrivalTimePoints.append((SCtype, currentTime))
 
     t = 1
@@ -103,7 +122,7 @@ def generate(maxTime, arrRate, arrProc):
 #  arrivals[c, t] is the number of arrival requests of SC type c at time-slot t
 arrivals = generate(maxTime, arrivalRate, procs['exp'])
 
-np.savez("config/NF Information.npz", numOfNF=numOfNF, processingCost=processingCost)
-np.savez("config/SC Information.npz", numOfSC=numOfSC, lengthOfSC=lengthOfSC, serviceChains=serviceChainsNew)
+np.savez("config/NF Information.npz", numOfNF=numOfNF, processingCosts=processingCosts)
+np.savez("config/SC Information.npz", numOfSC=numOfSC, lengthOfSC=lengthOfSC, serviceChains=serviceChainsNew, windowSizes=windowSizes)
 np.savez("config/SN Information.npz", numOfServer=numOfServer, serverCapacities=serverCapacities, idleEnergies=idleEnergies, maxEnergies=maxEnergies)
-np.savez("config/System Information", pCost=pCost, maxTime=maxTime, arrivals=arrivals, Vs=Vs, gamma=gamma)
+np.savez("config/System Information.npz", unitCommCost=unitCommCost, maxTime=maxTime, arrivals=arrivals, Vs=Vs, gamma=gamma, alpha=alpha)
