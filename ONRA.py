@@ -50,8 +50,8 @@ placements = {V: {} for V in Vs}
 # energyCosts[V][s] denotes the energy consumption on server s.
 energyCosts = {V: np.zeros(numOfServer, dtype=int) for V in Vs}
 
-# partitionCosts[V][c] denotes the partition cost of chain c.
-partitionCosts = {V: np.zeros(numOfSC, dtype=int) for V in Vs}
+# communicationCosts[V][c] denotes the communication cost of chain c.
+communicationCosts = {V: np.zeros(numOfSC, dtype=int) for V in Vs}
 
 '''
 records of states over time
@@ -63,20 +63,11 @@ timeAverageOfQueueBacklogs = {V: np.zeros(maxTime) for V in Vs}
 cumulativeEnergyCosts = {V: np.zeros(maxTime) for V in Vs}
 timeAverageOfEnergyCosts = {V: np.zeros(maxTime) for V in Vs}
 
-cumulativePartitionCosts = {V: np.zeros(maxTime) for V in Vs}
-timeAverageOfPartitionCosts = {V: np.zeros(maxTime) for V in Vs}
+cumulativeCommunicationCosts = {V: np.zeros(maxTime) for V in Vs}
+timeAverageOfCommunicationCosts = {V: np.zeros(maxTime) for V in Vs}
 
 
 def VNFPlacement(t, V, queues, resources, services):
-    '''
-    :param t: current time-slot t
-    :param V: current trade-off parameter V
-    :param queues: current queue backlogs
-    :param resources: resource allocation of previous time-slot
-    :param services: actual number of services of previous time-slot
-    :returns placement: VNF placement decision
-    :returns partitions: resulting partition costs
-    '''
     #  placement[(c,f)] = s means VNF f of SC type c is placed on server s
     placement = {}
 
@@ -156,23 +147,10 @@ def ResourceAllocation(t, V, queues, placement, mValue):
 
 
 def QueueUpdate(t, V, queues, servicesPre, placement, resources):
-    '''
-    :param t: current time-slot t
-    :param V: current trade-off parameter V
-    :param queues: current queue backlogs
-    :param servicesPre: actual number of services of previous time-slot
-    :param servicesCur: actual number of services of current time-slot
-    :param placement: actual VNF placement
-    :param resources: resources allocated at current time slot
-    :return queues: updated queues
-    :return partitions:
-    :return services:
-    :return energies:
-    '''
     #  updatedQueues[c, f, s] is queue length after updating
     updatedQueues = queues.copy()
-    #  partitions[c] is the partition cost of SC c
-    partitions = np.zeros(numOfSC)
+    #  communications[c] is the communication cost of SC c
+    communications = np.zeros(numOfSC)
     #  services[c, f, s] denotes the number of finished requests of queue (c,f,s) of current time-slot
     services = np.zeros((numOfSC, numOfNF, numOfServer))
     #  energies[s] denotes the energy consumption of server s
@@ -192,7 +170,7 @@ def QueueUpdate(t, V, queues, servicesPre, placement, resources):
                 for s in range(numOfServer):
                     updatedQueues[c, f, chosenServer] += servicesPre[c, fPre, s]
                     if s != chosenServer:
-                        partitions[c] += servicesPre[c, fPre, s] * unitCommCost
+                        communications[c] += servicesPre[c, fPre, s] * unitCommCost
 
     # Service process
     for s in range(numOfServer):
@@ -203,7 +181,7 @@ def QueueUpdate(t, V, queues, servicesPre, placement, resources):
                 energies[s] += (maxEnergies[s] - idleEnergies[s]) / float(serverCapacities[s]) * resources[c, f, s]
                 updatedQueues[c, f, s] -= services[c, f, s]
 
-    return updatedQueues, partitions, services, energies
+    return updatedQueues, communications, services, energies
 
 
 def VNFGreedy(t, V):
@@ -211,13 +189,13 @@ def VNFGreedy(t, V):
     :param t: current time-slot t
     :param V: current trade-off parameter V
     '''
-    global queueBacklogs, resourceAllocations, placements, energyCosts, partitionCosts, actualServices
+    global queueBacklogs, resourceAllocations, placements, energyCosts, communicationCosts, actualServices
 
     placements[V], mValue = VNFPlacement(t, V, queueBacklogs[V], resourceAllocations[V], actualServices[V])
 
     resourceAllocations[V] = ResourceAllocation(t, V, queueBacklogs[V], placements[V], mValue)
 
-    queueBacklogs[V], partitionCosts[V], actualServices[V], energyCosts[V] = \
+    queueBacklogs[V], communicationCosts[V], actualServices[V], energyCosts[V] = \
         QueueUpdate(t, V, queueBacklogs[V], actualServices[V], placements[V], resourceAllocations[V])
 
 
@@ -237,8 +215,8 @@ if __name__ == "__main__":
             cumulativeEnergyCosts[V][t] += cumulativeEnergyCosts[V][t - 1] + np.sum(energyCosts[V])
             timeAverageOfEnergyCosts[V][t] = cumulativeEnergyCosts[V][t] / float(t + 1)
 
-            cumulativePartitionCosts[V][t] += cumulativePartitionCosts[V][t - 1] + np.sum(partitionCosts[V])
-            timeAverageOfPartitionCosts[V][t] = cumulativePartitionCosts[V][t] / float(t + 1)
+            cumulativeCommunicationCosts[V][t] += cumulativeCommunicationCosts[V][t - 1] + np.sum(communicationCosts[V])
+            timeAverageOfCommunicationCosts[V][t] = cumulativeCommunicationCosts[V][t] / float(t + 1)
 
             varOfQueueBacklogs[V][t] = np.var(queueBacklogs[V])
 
@@ -247,16 +225,16 @@ if __name__ == "__main__":
     # Be careful of the Vs mapping to i. [1, 10, 20, 50, 100] --> [0, 1, 2, 3, 4]
     timeAverageOfQueueBacklogsNew = np.zeros((lenOfVs, maxTime))
     timeAverageOfEnergyCostsNew = np.zeros((lenOfVs, maxTime))
-    timeAverageOfPartitionCostsNew = np.zeros((lenOfVs, maxTime))
+    timeAverageOfCommunicationCostsNew = np.zeros((lenOfVs, maxTime))
 
     for i in range(lenOfVs):
         timeAverageOfQueueBacklogsNew[i, :] = np.array(timeAverageOfQueueBacklogs[Vs[i]])
         timeAverageOfEnergyCostsNew[i, :] = np.array(timeAverageOfEnergyCosts[Vs[i]])
-        timeAverageOfPartitionCostsNew[i, :] = np.array(timeAverageOfPartitionCosts[Vs[i]])
+        timeAverageOfCommunicationCostsNew[i, :] = np.array(timeAverageOfCommunicationCosts[Vs[i]])
 
     np.save("resultsONRA/timeAverageOfQueueBacklogs.npy", timeAverageOfQueueBacklogsNew)
     np.save("resultsONRA/timeAverageOfEnergyCosts.npy", timeAverageOfEnergyCostsNew)
-    np.save("resultsONRA/timeAverageOfCommunicationCosts.npy", timeAverageOfPartitionCostsNew)
+    np.save("resultsONRA/timeAverageOfCommunicationCosts.npy", timeAverageOfCommunicationCostsNew)
     np.save("resultsONRA/varOfQueueBacklogs.npy", varOfQueueBacklogs)
 
     np.save("resultsONRA/runtime.npy", end_time - start_time)
