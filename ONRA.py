@@ -255,7 +255,7 @@ if __name__ == "__main__":
 
     np.save("resultsONRA/timeAverageOfQueueBacklogs.npy", timeAverageOfQueueBacklogsNew)
     np.save("resultsONRA/timeAverageOfEnergyCosts.npy", timeAverageOfEnergyCostsNew)
-    np.save("resultsONRA/timeAverageOfPartitionCosts.npy", timeAverageOfPartitionCostsNew)
+    np.save("resultsONRA/timeAverageOfCommunicationCosts.npy", timeAverageOfPartitionCostsNew)
     np.save("resultsONRA/varOfQueueBacklogs.npy", varOfQueueBacklogs)
 
     np.save("resultsONRA/runtime.npy", end_time - start_time)

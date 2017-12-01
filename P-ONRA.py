@@ -134,6 +134,8 @@ def ResourceAllocation(t, V, queues, placement, mValue):
                 f = serviceChains[c, i]
                 weights[c, f] -= queues[c, f, s] / float(processingCosts[f])
 
+        # print(s, weights)
+
         restCapacity = serverCapacities[s]
         while True:
             (chosenType, chosenVM) = np.unravel_index(weights.argmin(), weights.shape)
@@ -186,7 +188,8 @@ def QueueUpdate(t, V, queues, servicesPre, predictionServices, placement, resour
         for c in range(numOfSC):
             for i in range(lengthOfSC):
                 f = serviceChains[c, i]
-                services[c, f, s] = resources[c, f, s] / float(processingCosts[f])
+
+                services[c, f, s] = np.floor(resources[c, f, s] / float(processingCosts[f]))
                 energies[s] += (maxEnergies[s] - idleEnergies[s]) / float(serverCapacities[s]) * resources[c, f, s]
                 updatedQueues[c, f, s] -= services[c, f, s]
 
@@ -248,13 +251,20 @@ if __name__ == "__main__":
             VNFGreedy(t, V)
 
             cumulativeQueueBacklogs[V][t] += cumulativeQueueBacklogs[V][t - 1] + np.sum(queueBacklogs[V])
+
+            # print('queue:', cumulativeQueueBacklogs[V][t])
+
             timeAverageOfQueueBacklogs[V][t] = cumulativeQueueBacklogs[V][t] / float(t + 1)
 
             cumulativeEnergyCosts[V][t] += cumulativeEnergyCosts[V][t - 1] + np.sum(energyCosts[V])
             timeAverageOfEnergyCosts[V][t] = cumulativeEnergyCosts[V][t] / float(t + 1)
 
+            # print('energy:', cumulativeEnergyCosts[V][t])
+
             cumulativeCommunicationCosts[V][t] += cumulativeCommunicationCosts[V][t - 1] + np.sum(communicationCosts[V])
             timeAverageOfCommunicationCosts[V][t] = cumulativeCommunicationCosts[V][t] / float(t + 1)
+
+            # print('communication:', cumulativeCommunicationCosts[V][t])
 
             varOfQueueBacklogs[V][t] = np.var(queueBacklogs[V])
 
